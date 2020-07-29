@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0.0
+Type=Application
+Name=Sand Game
+GenericName=Sand Game
+Exec=sand-game
+Icon=${SNAP}/meta/gui/sand-game.png
+Terminal=false
+Path=/usr/bin/
+Categories=Game;
+StartupNotify=true
