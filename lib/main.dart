@@ -41,7 +41,16 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: ListView(children: [SandCanvas(material: _type)]),
+      body: ListView(children: [
+        LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+          return SandCanvas(
+            material: _type,
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+          );
+        })
+      ]),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await askMaterial(context);

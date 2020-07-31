@@ -255,10 +255,7 @@ class Simulator {
   }
 
   bool test(int x, int y, CellType material) {
-    if (x >= width || x < 0 || y >= height || y < 0) {
-      return false;
-    }
-    return _board[x][y] == material;
+    return inBounds(x, y) && _board[x][y] == material;
   }
 
   bool inBounds(int x, int y) {
@@ -312,5 +309,19 @@ class Simulator {
 
   bool testWater(int x, int y) {
     return test(x, y, CellType.WATER) || test(x, y, CellType.WATER_GENERATOR);
+  }
+
+  void resizeWidth(int newWidth) {
+    if (this.width == newWidth) {
+      return;
+    }
+    print("resizing to $newWidth");
+    this.width = newWidth;
+    clear();
+  }
+
+  clear() {
+    _board = List.generate(
+        this.width, (i) => List.generate(this.height, (j) => CellType.NONE));
   }
 }

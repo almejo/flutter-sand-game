@@ -6,22 +6,26 @@ import 'package:sand_game/simulator.dart';
 class SandCanvas extends StatefulWidget {
   final CellType material;
 
-  SandCanvas({this.material});
+  final double width;
+
+  final double height;
+
+  SandCanvas({this.material, this.width, this.height});
 
   @override
   _SandCanvasState createState() => _SandCanvasState();
 }
 
 class _SandCanvasState extends State<SandCanvas> {
-  Simulator simulator = Simulator(100, 100);
-  Timer timer;
+  Simulator _simulator = new Simulator(100, 100);
+  Timer _timer;
   var _ticks = 10000;
   var _milliseconds = 50;
 
   @override
   void initState() {
-    timer = Timer.periodic(Duration(milliseconds: _milliseconds), (timer) {
-      simulator.tick(_ticks);
+    _timer = Timer.periodic(Duration(milliseconds: _milliseconds), (timer) {
+      _simulator.tick(_ticks);
       setState(() {});
     });
 
@@ -30,22 +34,23 @@ class _SandCanvasState extends State<SandCanvas> {
 
   @override
   void dispose() {
-    timer?.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    _simulator.resizeWidth(widget.width ~/ 5.0);
     return Column(children: [
       GestureDetector(
           onVerticalDragStart: (details) => setMaterial(details),
           onHorizontalDragUpdate: (details) => setMaterial(details),
           onTapDown: (details) => setMaterial(details),
           child: Container(
-              width: 500,
+              width: widget.width,
               height: 500,
               child: CustomPaint(
-                painter: MyPainter(simulator: simulator),
+                painter: SandPainter(simulator: _simulator),
                 child: Container(),
               ))),
       Row(children: [
@@ -79,36 +84,70 @@ class _SandCanvasState extends State<SandCanvas> {
           value: _milliseconds.toDouble(),
           onChanged: (value) {
             _milliseconds = value.toInt();
-            timer.cancel();
-            timer = Timer.periodic(
+            _timer.cancel();
+            _timer = Timer.periodic(
                 Duration(milliseconds: _milliseconds.toInt()), (timer) {
-              simulator.tick(_ticks);
+              _simulator.tick(_ticks);
               setState(() {});
             });
           },
-        )
+        ),
       ]),
+      RaisedButton.icon(
+          onPressed: _showClearDialog,
+          icon: Icon(Icons.delete),
+          label: Text('Delete'))
     ]);
   }
 
   void setMaterial(details) {
-    simulator.setMaterial(details.localPosition.dx ~/ 5,
+    _simulator.setMaterial(details.localPosition.dx ~/ 5,
         details.localPosition.dy ~/ 5, widget.material);
-    simulator.setMaterial(details.localPosition.dx ~/ 5 + 1,
+    _simulator.setMaterial(details.localPosition.dx ~/ 5 + 1,
         details.localPosition.dy ~/ 5, widget.material);
-    simulator.setMaterial(details.localPosition.dx ~/ 5,
+    _simulator.setMaterial(details.localPosition.dx ~/ 5,
         details.localPosition.dy ~/ 5 + 1, widget.material);
-    simulator.setMaterial(details.localPosition.dx ~/ 5 - 1,
+    _simulator.setMaterial(details.localPosition.dx ~/ 5 - 1,
         details.localPosition.dy ~/ 5, widget.material);
-    simulator.setMaterial(details.localPosition.dx ~/ 5,
+    _simulator.setMaterial(details.localPosition.dx ~/ 5,
         details.localPosition.dy ~/ 5 - 1, widget.material);
+  }
+
+  void _showClearDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text("Clear all"),
+          content:
+              new Text("Are you sure you want to clear the board? This cannot be undone"),
+          actions: <Widget>[
+            // usually buttons at the bottom of the dialog
+            new FlatButton(
+              child: new Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            new FlatButton(
+              child: new Text("Ok"),
+              onPressed: () {
+                _simulator.clear();
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        );
+      },
+    );
   }
 }
 
-class MyPainter extends CustomPainter {
+class SandPainter extends CustomPainter {
   Simulator simulator;
 
-  MyPainter({this.simulator});
+  SandPainter({this.simulator});
 
   @override
   bool shouldRepaint(CustomPainter old) {
