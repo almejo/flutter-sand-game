@@ -11,6 +11,8 @@ enum CellType {
   STEAM,
   PLANT,
   FIRE,
+  FIRE_GENERATOR,
+  WOOD,
 }
 
 extension MaterialColor on CellType {
@@ -30,6 +32,10 @@ extension MaterialColor on CellType {
         return Colors.green;
       case CellType.WATER_GENERATOR:
         return Colors.blue;
+      case CellType.FIRE_GENERATOR:
+        return Colors.red;
+      case CellType.WOOD:
+        return Colors.brown;
       case CellType.FIRE:
         return Colors.amberAccent;
       default:
@@ -55,8 +61,12 @@ extension MaterialName on CellType {
         return 'Plant';
       case CellType.WATER_GENERATOR:
         return 'Water generator';
+      case CellType.FIRE_GENERATOR:
+        return 'Fire Generator';
       case CellType.FIRE:
         return 'Fire';
+      case CellType.WOOD:
+        return 'Wood';
       default:
         return '';
     }
@@ -106,6 +116,9 @@ class Simulator {
       case CellType.FIRE:
         doFire(x, y);
         break;
+      case CellType.FIRE_GENERATOR:
+        doGenerator(x, y, CellType.FIRE);
+        break;
       case CellType.STEAM:
         doSteam(x, y);
         break;
@@ -151,35 +164,32 @@ class Simulator {
   }
 
   void doFire(int x, int y) {
-    if (test(x, y + 1, CellType.PLANT)) {
+    burn(x, y + 1);
+    burn(x + 1, y + 1);
+    burn(x, y + 1);
+    burn(x + 1, y);
+    burn(x + 1, y - 1);
+    burn(x, y - 1);
+    burn(x - 1, y - 1);
+    burn(x + 1, y);
+    burn(x - 1, y + 1);
+    if (_random.nextInt(100) < 10) {
+      _board[x][y] = CellType.NONE;
+    } else if (isEmpty(x, y + 1) && _random.nextInt(100) < 10) {
       _board[x][y + 1] = CellType.FIRE;
     }
-    if (test(x + 1, y + 1, CellType.PLANT)) {
-      _board[x + 1][y + 1] = CellType.FIRE;
-    }
-    if (test(x + 1, y, CellType.PLANT)) {
-      _board[x + 1][y] = CellType.FIRE;
-    }
-    if (test(x + 1, y - 1, CellType.PLANT)) {
-      _board[x + 1][y - 1] = CellType.FIRE;
-    }
-    if (test(x, y - 1, CellType.PLANT)) {
-      _board[x][y - 1] = CellType.FIRE;
-    }
-    if (test(x - 1, y - 1, CellType.PLANT)) {
-      _board[x - 1][y - 1] = CellType.FIRE;
-    }
-    if (test(x - 1, y, CellType.PLANT)) {
-      _board[x - 1][y] = CellType.FIRE;
-    }
-    if (test(x - 1, y + 1, CellType.PLANT)) {
-      _board[x - 1][y + 1] = CellType.FIRE;
-    }
-    _board[x][y] = CellType.NONE;
-    if (test(x, y - 1, CellType.WATER)) {
-      _board[x][y - 1] = CellType.STEAM;
+  }
+
+  void burn(int x, int y) {
+    if (isFlammable(x, y) && _random.nextInt(100) < 10) {
+      _board[x][y] = CellType.FIRE;
+    } else if (testWater(x, y)) {
+      _board[x][y] = CellType.STEAM;
     }
   }
+
+  bool isFlammable(int x, int y) =>
+      test(x, y, CellType.PLANT) || test(x, y, CellType.WOOD);
 
   void doWater(int x, int y) {
     if (_random.nextInt(100) < 50) {
@@ -275,10 +285,22 @@ class Simulator {
   }
 
   void doGenerator(int x, int y, CellType type) {
-    if (isEmpty(x, y + 1) || canMove(x, y + 1)) {
-      _board[x][y + 1] = type;
+    for (int i = -1; i <= 1; i++) {
+      for (int j = -1; j <= 1; j++) {
+        if (i != 0 || j != 0) {
+          generate(x + i, y + j, type);
+        }
+      }
     }
   }
+
+  void generate(int x, int y, CellType type) {
+    if (canGenerate(x, y) && _random.nextInt(1000) < 20) {
+      _board[x][y] = type;
+    }
+  }
+
+  bool canGenerate(int x, int y) => isEmpty(x, y) || canMove(x, y);
 
   void setMaterial(int x, int y, CellType type) {
     if (!inBounds(x, y)) {
@@ -288,27 +310,31 @@ class Simulator {
   }
 
   void doPlant(int x, int y) {
-    if (testWater(x, y + 1)) {
+    if (canConvertToPlant(x, y + 1)) {
       _board[x][y + 1] = CellType.PLANT;
-    } else if (testWater(x + 1, y + 1)) {
+    } else if (canConvertToPlant(x + 1, y + 1)) {
       _board[x + 1][y + 1] = CellType.PLANT;
-    } else if (testWater(x + 1, y)) {
+    } else if (canConvertToPlant(x + 1, y)) {
       _board[x + 1][y] = CellType.PLANT;
-    } else if (testWater(x + 1, y - 1)) {
+    } else if (canConvertToPlant(x + 1, y - 1)) {
       _board[x + 1][y - 1] = CellType.PLANT;
-    } else if (testWater(x, y - 1)) {
+    } else if (canConvertToPlant(x, y - 1)) {
       _board[x][y - 1] = CellType.PLANT;
-    } else if (testWater(x - 1, y - 1)) {
+    } else if (canConvertToPlant(x - 1, y - 1)) {
       _board[x - 1][y - 1] = CellType.PLANT;
-    } else if (testWater(x - 1, y)) {
+    } else if (canConvertToPlant(x - 1, y)) {
       _board[x - 1][y] = CellType.PLANT;
-    } else if (testWater(x - 1, y + 1)) {
+    } else if (canConvertToPlant(x - 1, y + 1)) {
       _board[x - 1][y + 1] = CellType.PLANT;
     }
   }
 
+  bool canConvertToPlant(int x, int y) {
+    return testWater(x, y) && _random.nextInt(100) < 10;
+  }
+
   bool testWater(int x, int y) {
-    return test(x, y, CellType.WATER) || test(x, y, CellType.WATER_GENERATOR);
+    return test(x, y, CellType.WATER);
   }
 
   void resizeWidth(int newWidth) {
