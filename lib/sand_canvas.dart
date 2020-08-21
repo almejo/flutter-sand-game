@@ -44,6 +44,8 @@ class _SandCanvasState extends State<SandCanvas> {
     return Column(children: [
       GestureDetector(
           onVerticalDragStart: (details) => setMaterial(details),
+          onVerticalDragUpdate: (details) => setMaterial(details),
+          onHorizontalDragStart: (details) => setMaterial(details),
           onHorizontalDragUpdate: (details) => setMaterial(details),
           onTapDown: (details) => setMaterial(details),
           child: Container(
