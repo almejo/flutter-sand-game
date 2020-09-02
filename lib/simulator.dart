@@ -15,6 +15,8 @@ enum CellType {
   WOOD,
 }
 
+const _generators  = [CellType.FIRE_GENERATOR, CellType.SAND_GENERATOR, CellType.WATER_GENERATOR];
+
 extension MaterialColor on CellType {
   Color get color {
     switch (this) {
@@ -128,6 +130,10 @@ class Simulator {
   void doSteam(int x, int y) {
     if (isEmpty(x, y - 1) || isFluid(x, y - 1)) {
       swap(x, y, x, y - 1);
+    }
+    if ((isPlant(x, y - 1) || isPlant(x - 1, y) || isPlant(x + 1, y)) &&
+        _random.nextInt(100) < 50) {
+      setMaterial(x, y, CellType.PLANT);
     } else if (_random.nextInt(100) < 50) {
       if (!checkGasRight(x, y) && !checkGasLeft(x, y)) {
         checkCondensation(x, y);
@@ -300,7 +306,7 @@ class Simulator {
     }
   }
 
-  bool canGenerate(int x, int y) => isEmpty(x, y) || canMove(x, y);
+  bool canGenerate(int x, int y) => !isGenerator(x,y);
 
   void setMaterial(int x, int y, CellType type) {
     if (!inBounds(x, y)) {
@@ -349,5 +355,13 @@ class Simulator {
   clear() {
     _board = List.generate(
         this.width, (i) => List.generate(this.height, (j) => CellType.NONE));
+  }
+
+  bool isPlant(int x, int y) {
+    return test(x, y, CellType.PLANT);
+  }
+
+  bool isGenerator(int x, int y) {
+    return _generators.contains(getCellType(x, y));
   }
 }

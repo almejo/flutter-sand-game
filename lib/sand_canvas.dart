@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sand_game/simulator.dart';
 
+const double blockSide = 3.0;
+
 class SandCanvas extends StatefulWidget {
   final CellType material;
 
@@ -17,10 +19,10 @@ class SandCanvas extends StatefulWidget {
 }
 
 class _SandCanvasState extends State<SandCanvas> {
-  Simulator _simulator = new Simulator(100, 100);
+  Simulator _simulator = new Simulator(100, 500 ~/ blockSide);
   Timer _timer;
-  var _ticks = 10000;
-  var _milliseconds = 50;
+  var _ticks = 45000;
+  var _milliseconds = 20;
 
   @override
   void initState() {
@@ -40,7 +42,7 @@ class _SandCanvasState extends State<SandCanvas> {
 
   @override
   Widget build(BuildContext context) {
-    _simulator.resizeWidth(widget.width ~/ 5.0);
+    _simulator.resizeWidth(widget.width ~/ blockSide);
     return Column(children: [
       GestureDetector(
           onVerticalDragStart: (details) => setMaterial(details),
@@ -66,6 +68,7 @@ class _SandCanvasState extends State<SandCanvas> {
           min: 0,
           max: 50000,
           value: _ticks.toDouble(),
+          label: "$_ticks",
           onChanged: (value) {
             setState(() {
               _ticks = value.toInt();
@@ -80,9 +83,10 @@ class _SandCanvasState extends State<SandCanvas> {
               'Interval milliseconds',
               textAlign: TextAlign.center,
             )),
-        Slider(
+        Slider.adaptive(
           min: 5,
           max: 100,
+          label: "$_milliseconds",
           value: _milliseconds.toDouble(),
           onChanged: (value) {
             _milliseconds = value.toInt();
@@ -103,16 +107,16 @@ class _SandCanvasState extends State<SandCanvas> {
   }
 
   void setMaterial(details) {
-    _simulator.setMaterial(details.localPosition.dx ~/ 5,
-        details.localPosition.dy ~/ 5, widget.material);
-    _simulator.setMaterial(details.localPosition.dx ~/ 5 + 1,
-        details.localPosition.dy ~/ 5, widget.material);
-    _simulator.setMaterial(details.localPosition.dx ~/ 5,
-        details.localPosition.dy ~/ 5 + 1, widget.material);
-    _simulator.setMaterial(details.localPosition.dx ~/ 5 - 1,
-        details.localPosition.dy ~/ 5, widget.material);
-    _simulator.setMaterial(details.localPosition.dx ~/ 5,
-        details.localPosition.dy ~/ 5 - 1, widget.material);
+    _simulator.setMaterial(details.localPosition.dx ~/ blockSide,
+        details.localPosition.dy ~/ blockSide, widget.material);
+    _simulator.setMaterial(details.localPosition.dx ~/ blockSide + 1,
+        details.localPosition.dy ~/ blockSide, widget.material);
+    _simulator.setMaterial(details.localPosition.dx ~/ blockSide,
+        details.localPosition.dy ~/ blockSide + 1, widget.material);
+    _simulator.setMaterial(details.localPosition.dx ~/ blockSide - 1,
+        details.localPosition.dy ~/ blockSide, widget.material);
+    _simulator.setMaterial(details.localPosition.dx ~/ blockSide,
+        details.localPosition.dy ~/ blockSide - 1, widget.material);
   }
 
   void _showClearDialog() {
@@ -122,8 +126,8 @@ class _SandCanvasState extends State<SandCanvas> {
         // return object of type Dialog
         return AlertDialog(
           title: new Text("Clear all"),
-          content:
-              new Text("Are you sure you want to clear the board? This cannot be undone"),
+          content: new Text(
+              "Are you sure you want to clear the board? This cannot be undone"),
           actions: <Widget>[
             // usually buttons at the bottom of the dialog
             new FlatButton(
@@ -148,8 +152,9 @@ class _SandCanvasState extends State<SandCanvas> {
 
 class SandPainter extends CustomPainter {
   Simulator simulator;
+  double side;
 
-  SandPainter({this.simulator});
+  SandPainter({this.side, this.simulator});
 
   @override
   bool shouldRepaint(CustomPainter old) {
@@ -157,13 +162,22 @@ class SandPainter extends CustomPainter {
   }
 
   paint(Canvas canvas, Size size) {
+    final backgroundPaint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 4;
+    Rect myRect = Offset(0, 0) &
+        Size(blockSide * simulator.width, blockSide * simulator.height);
+    canvas.drawRect(myRect, backgroundPaint);
     for (int i = 0; i < simulator.width; i++) {
       for (int j = 0; j < simulator.height; j++) {
-        Rect myRect = Offset(i * 5.0, j * 5.0) & Size(5.0, 5.0);
-        final paint = Paint()
-          ..color = simulator.getCellType(i, j).color
-          ..strokeWidth = 4;
-        canvas.drawRect(myRect, paint);
+        if (simulator.getCellType(i, j) != CellType.NONE) {
+          Rect myRect =
+              Offset(i * blockSide, j * blockSide) & Size(blockSide, blockSide);
+          final paint = Paint()
+            ..color = simulator.getCellType(i, j).color
+            ..strokeWidth = 4;
+          canvas.drawRect(myRect, paint);
+        }
       }
     }
   }

@@ -56,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
           await askMaterial(context);
         },
         tooltip: 'Materials',
-        child: Icon(Icons.add),
+        child: Icon(Icons.palette),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
